@@ -5,7 +5,7 @@ import sys
 from matplotlib import pyplot as plt
 from batchnorm import ConvolutionalBatchNormalizer
 
-filenames = sorted(glob.glob("../colornet/*/*.jpg"))
+filenames = sorted(glob.glob("rgb_imgs/*.jpg"))
 batch_size = 1
 num_epochs = 1e+9
 
