@@ -1,18 +1,18 @@
-"""A helper class for managing batch normalization state.                   
+"""A helper class for managing batch normalization state.
 
-This class is designed to simplify adding batch normalization               
-(http://arxiv.org/pdf/1502.03167v3.pdf) to your model by                    
-managing the state variables associated with it.                            
+This class is designed to simplify adding batch normalization
+(http://arxiv.org/pdf/1502.03167v3.pdf) to your model by
+managing the state variables associated with it.
 
-Important use note:  The function get_assigner() returns                    
-an op that must be executed to save the updated state.                      
-A suggested way to do this is to make execution of the                      
-model optimizer force it, e.g., by:                                         
+Important use note:  The function get_assigner() returns
+an op that must be executed to save the updated state.
+A suggested way to do this is to make execution of the
+model optimizer force it, e.g., by:
 
-  update_assignments = tf.group(bn1.get_assigner(),                         
-                                bn2.get_assigner())                         
-  with tf.control_dependencies([optimizer]):                                
-    optimizer = tf.group(update_assignments)                                
+  update_assignments = tf.group(bn1.get_assigner(),
+                                bn2.get_assigner())
+  with tf.control_dependencies([optimizer]):
+    optimizer = tf.group(update_assignments)
 
 """
 
@@ -20,14 +20,14 @@ import tensorflow as tf
 
 
 class ConvolutionalBatchNormalizer(object):
-  """Helper class that groups the normalization logic and variables.        
+  """Helper class that groups the normalization logic and variables.
 
-  Use:                                                                      
-      ewma = tf.train.ExponentialMovingAverage(decay=0.99)                  
-      bn = ConvolutionalBatchNormalizer(depth, 0.001, ewma, True)           
-      update_assignments = bn.get_assigner()                                
-      x = bn.normalize(y, train=training?)                                  
-      (the output x will be batch-normalized).                              
+  Use:
+      ewma = tf.train.ExponentialMovingAverage(decay=0.99)
+      bn = ConvolutionalBatchNormalizer(depth, 0.001, ewma, True)
+      update_assignments = bn.get_assigner()
+      x = bn.normalize(y, train=training?)
+      (the output x will be batch-normalized).
   """
 
   def __init__(self, depth, epsilon, ewma_trainer, scale_after_norm):
