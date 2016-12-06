@@ -218,7 +218,7 @@ elif uv == 2:
 else:
     loss = (tf.split(3, 2, loss)[0] + tf.split(3, 2, loss)[1]) / 2
 
-if phase_train:
+if phase_train is not None:
     optimizer = tf.train.GradientDescentOptimizer(0.0001)
     opt = optimizer.minimize(
         loss, global_step=global_step, gate_gradients=optimizer.GATE_NONE)
