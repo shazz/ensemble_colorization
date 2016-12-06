@@ -249,9 +249,6 @@ sess = tf.Session()
 sess.run(init_op)
 sess.run(init_op2)
 
-merged = tf.merge_all_summaries()
-writer = tf.train.SummaryWriter("tb_log", sess.graph_def)
-
 # Start input enqueue threads.
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
@@ -265,8 +262,8 @@ try:
         step = sess.run(global_step)
 
         if step % 1 == 0:
-            pred_, pred_rgb_, colorimage_, grayscale_rgb_, cost, merged_ = sess.run(
-                [pred, pred_rgb, colorimage, grayscale_rgb, loss, merged], feed_dict={phase_train: False, uv: 3})
+            pred_, pred_rgb_, colorimage_, grayscale_rgb_, cost = sess.run(
+                [pred, pred_rgb, colorimage, grayscale_rgb, loss], feed_dict={phase_train: False, uv: 3})
             print {
                 "step": step,
                 "cost": np.mean(cost)
@@ -277,8 +274,6 @@ try:
                 plt.imsave("summary/" + str(step) + "_0", summary_image)
 
             sys.stdout.flush()
-            writer.add_summary(merged_, step)
-            writer.flush()
         if step % 100000 == 99998:
             save_path = saver.save(sess, "model.ckpt")
             print("Model saved in file: %s" % save_path)
