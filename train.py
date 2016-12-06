@@ -240,12 +240,14 @@ saver = tf.train.Saver()
 
 # Create the graph, etc.
 init_op = tf.initialize_all_variables()
+init_op2 = tf.initialize_local_variables()
 
 # Create a session for running operations in the Graph.
 sess = tf.Session()
 
 # Initialize the variables.
 sess.run(init_op)
+sess.run(init_op2)
 
 merged = tf.merge_all_summaries()
 writer = tf.train.SummaryWriter("tb_log", sess.graph_def)
