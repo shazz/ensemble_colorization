@@ -253,6 +253,9 @@ sess.run(init_op2)
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
+num_images = len(filenames)
+print('Beginning training...')
+print("Found {} images under the 'rgbs_imgs' directory".format(num_images))
 try:
     while not coord.should_stop():
         # Run training steps
@@ -281,9 +284,14 @@ try:
 
 except tf.errors.OutOfRangeError:
     print('Done training -- epoch limit reached')
+except KeyboardInterrupt:
+    print('Training stopped at the request of the user')
 finally:
     # When done, ask the threads to stop.
     coord.request_stop()
+    # Save the final model
+    model_path = saver.save(sess, 'final_model.ckpt')
+    print("Saving final model to '{}'".format(model_path))
 
 # Wait for threads to finish.
 coord.join(threads)
