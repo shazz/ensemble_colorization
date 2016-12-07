@@ -4,10 +4,34 @@ import glob
 import sys
 from matplotlib import pyplot as plt
 from batchnorm import ConvolutionalBatchNormalizer
+from argparse import ArgumentParser
+
+# Default values for parameters
+NUM_EPOCHS = 1e+9
+IMAGE_SAVE_RATE = 1000
+MODEL_SAVE_RATE = 100000
+
+# Command-line arguments
+parser = ArgumentParser(description="Trains a recolorization CNN with the "
+        "given parameters under the images in rgb_imgs/. The model is "
+        "incrementally saved to model.chkpt.")
+parser.add_argument("-e", "--epochs", dest='num_epochs', default=NUM_EPOCHS,
+        type=int, help="The number of epochs to run training for. An epoch is "
+        "a complete iteration over all the input images.")
+parser.add_argument("-i", "--image-save-rate", dest="image_save_rate", type=int,
+        default=IMAGE_SAVE_RATE, help="How often to save an image while "
+        "training. Every N images will be saved to 'summary/'.")
+parser.add_argument("-m", "--model-save-rate", dest="model_save_rate", type=int,
+        default=MODEL_SAVE_RATE, help="How often to update the increment model "
+        "that has been trained so far. After every N images are processed, the "
+        "model will be saved to 'model.chkpt'")
+args = parser.parse_args()
 
 filenames = sorted(glob.glob("rgb_imgs/*.jpg"))
 batch_size = 1
-num_epochs = 1e+9
+num_epochs = args.num_epochs
+image_save_rate = args.image_save_rate
+model_save_rate = args.model_save_rate
 
 global_step = tf.Variable(0, name='global_step', trainable=False)
 phase_train = tf.placeholder(tf.bool, name='phase_train')
@@ -271,15 +295,21 @@ try:
                 "step": step,
                 "cost": np.mean(cost)
             }
-            if step % 1000 == 0:
-                summary_image = concat_images(grayscale_rgb_[0], pred_rgb_[0])
-                summary_image = concat_images(summary_image, colorimage_[0])
-                plt.imsave("summary/" + str(step) + "_0", summary_image)
-
             sys.stdout.flush()
-        if step % 100000 == 99998:
+
+        if step % image_save_rate == 0:
+            summary_image = concat_images(grayscale_rgb_[0], pred_rgb_[0])
+            summary_image = concat_images(summary_image, colorimage_[0])
+            summary_path = "summary/{}_{}".format(step / num_images,
+                    step % num_images)
+            plt.imsave(summary_path, summary_image)
+            print("Image summary saved to file '{}'".format(summary_path +
+                    ".jpg"))
+            sys.stdout.flush()
+
+        if (step % model_save_rate == 0) and (step != 0):
             save_path = saver.save(sess, "model.ckpt")
-            print("Model saved in file: %s" % save_path)
+            print("Model saved to file '{}'".format(save_path))
             sys.stdout.flush()
 
 except tf.errors.OutOfRangeError:
@@ -290,7 +320,7 @@ finally:
     # When done, ask the threads to stop.
     coord.request_stop()
     # Save the final model
-    model_path = saver.save(sess, 'final_model.ckpt')
+    model_path = saver.save(sess, 'final.tfmodel')
     print("Saving final model to '{}'".format(model_path))
 
 # Wait for threads to finish.
