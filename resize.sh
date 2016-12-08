@@ -33,5 +33,5 @@ if [ ! -e ${output_dir} ]; then
 fi
 
 # Convert images in parallel, using as many processes as possible
-find ${image_dir} -type f | parallel --dryrun -j ${NUM_JOBS} --progress \
+find ${image_dir} -type f | parallel -j ${NUM_JOBS} --progress \
     convert -resize ${IMAGE_SIZE}\! {} ${output_dir}/{/}
