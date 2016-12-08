@@ -28,10 +28,8 @@ image_dir=$1
 output_dir=$2
 
 # Make the output directory if it doesn't exist
-if [ ! -e ${output_dir} ]; then
-    mkdir ${output_dir}
-fi
+mkdir -p ${output_dir}
 
 # Convert images in parallel, using as many processes as possible
-find ${image_dir} -type f | parallel -j ${NUM_JOBS} --progress \
-    convert -resize ${IMAGE_SIZE}\! {} ${output_dir}/{/}
+find ${image_dir} -type f -name '*.jpg' | parallel -j ${NUM_JOBS} --progress \
+        convert -resize ${IMAGE_SIZE}\! {} ${output_dir}/{/}
