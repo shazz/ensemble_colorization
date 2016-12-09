@@ -96,7 +96,7 @@ def main():
         for image_path in image_paths:
             predictions = dict()
 
-            for color in ['red', 'green', 'blue']:
+            for color in ['blue', 'red', 'green']:
                 print 'Restoring session...'
                 saver.restore(sess, 'model_%s' % color)
                 print 'Session loaded!'
