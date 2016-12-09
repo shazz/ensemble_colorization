@@ -4,6 +4,7 @@ import os
 import glob
 import tensorflow as tf
 from matplotlib import pyplot as plt
+from matplotlib import colors
 import numpy as np
 from argparse import ArgumentParser
 
@@ -76,24 +77,22 @@ def recombine(predictions):
     Combines the output images from the 3 CNN's, where each one is biased to a
     color channel, into a final output image. Recombination is done by
     pixel-wise weighting, where the pixel value for any given CNN's output is
-    weighted as its relative intensity to the other two.
+    weighted as its relative saturation to the other two.
     """
     red_biased = predictions['red']
     green_biased = predictions['green']
     blue_biased = predictions['blue']
 
-    # Compute the pixel-wise intensities (sums) for each biased CNN output image
-    red_intensities = np.sum(red_biased, (2,))
-    print red_intensities
-    green_intensities = np.sum(green_biased, (2,))
-    blue_intensities = np.sum(blue_biased, (2,))
+    # Compute the pixel-wise saturation for each biased CNN output image
+    red_saturations = colors.rgb_to_hsv(red_biased)[:,:,1]
+    green_saturations = colors.rgb_to_hsv(green_biased)[:,:,1]
+    blue_saturations = colors.rgb_to_hsv(blue_biased)[:,:,1]
 
-    # Weight each CNN-bias by its relative intensities at each pixel
-    total_intensities = red_intensities + blue_intensities + green_intensities
-    print total_intensities
-    red_weights = red_intensities / total_intensities
-    green_weights = green_intensities / total_intensities
-    blue_weights = blue_intensities / total_intensities
+    # Weight each CNN-bias by its relative saturations at each pixel
+    total_saturations = red_saturations + blue_saturations + green_saturations
+    red_weights = red_saturations / total_saturations
+    green_weights = green_saturations / total_saturations
+    blue_weights = blue_saturations / total_saturations
 
     # Rehsape the per-pixel weights so they can be multiplies with the images
     new_shape = (red_weights.shape[0], red_weights.shape[1], 1)
@@ -122,9 +121,9 @@ def run(filename):
 
             graph = tf.get_default_graph()
             print 'Loaded default graph'
-            
+
             print 'Processing image %s ...' % filename
-            
+
             contents = tf.read_file(filename)
             uint8image = tf.image.decode_jpeg(contents, channels=3)
             resized_image = tf.div(tf.image.resize_images(uint8image, (224, 224)), 255)
@@ -139,20 +138,20 @@ def run(filename):
             grayscale_rgb = tf.image.grayscale_to_rgb(grayscale)
             grayscale_yuv = rgb2yuv(grayscale_rgb)
             grayscale = tf.concat(3, [grayscale, grayscale, grayscale])
-            
+
             print 'done transforms'
 
             pred_yuv = tf.concat(3, [tf.split(3, 3, grayscale_yuv)[0], pred])
             pred_rgb = yuv2rgb(pred_yuv)
-            
+
             input_image = sess.run(grayscale)
-            
+
             feed_dict = {phase_train : False, uv: 3, graph.get_tensor_by_name('concat:0') : input_image}
 
             print 'Running colornet...'
             pred_, pred_rgb_, colorimage_, grayscale_rgb_ = sess.run(
                 [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
-            
+
             predictions[color] = pred_rgb_[0]
 
             # Concatenate the grayscale, result, and original images together

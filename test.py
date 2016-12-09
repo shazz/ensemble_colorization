@@ -4,6 +4,7 @@ import os
 import glob
 import tensorflow as tf
 from matplotlib import pyplot as plt
+from matplotlib import colors
 import numpy as np
 from argparse import ArgumentParser
 
@@ -71,22 +72,22 @@ def recombine(predictions):
     Combines the output images from the 3 CNN's, where each one is biased to a
     color channel, into a final output image. Recombination is done by
     pixel-wise weighting, where the pixel value for any given CNN's output is
-    weighted as its relative intensity to the other two.
+    weighted as its relative saturation to the other two.
     """
     red_biased = predictions['red']
     green_biased = predictions['green']
     blue_biased = predictions['blue']
 
-    # Compute the pixel-wise intensities (sums) for each biased CNN output image
-    red_intensities = np.sum(red_biased, (2,))
-    green_intensities = np.sum(green_biased, (2,))
-    blue_intensities = np.sum(blue_biased, (2,))
+    # Compute the pixel-wise saturation for each biased CNN output image
+    red_saturations = colors.rgb_to_hsv(red_biased)[:,:,1]
+    green_saturations = colors.rgb_to_hsv(green_biased)[:,:,1]
+    blue_saturations = colors.rgb_to_hsv(blue_biased)[:,:,1]
 
-    # Weight each CNN-bias by its relative intensities at each pixel
-    total_intensities = red_intensities + blue_intensities + green_intensities
-    red_weights = red_intensities / total_intensities
-    green_weights = green_intensities / total_intensities
-    blue_weights = blue_intensities / total_intensities
+    # Weight each CNN-bias by its relative saturations at each pixel
+    total_saturations = red_saturations + blue_saturations + green_saturations
+    red_weights = red_saturations / total_saturations
+    green_weights = green_saturations / total_saturations
+    blue_weights = blue_saturations / total_saturations
 
     # Rehsape the per-pixel weights so they can be multiplies with the images
     new_shape = (red_weights.shape[0], red_weights.shape[1], 1)
