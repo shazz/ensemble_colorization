@@ -24,9 +24,23 @@
 !*.tfmodel
 !*.tfmodel.torrent
 
+# Allow for CSS, HTML, JSON, and Markdown files
+!*.css
+!*.html
+!*.json
+!*.md
+
+# Allow for font files
+!*.woff
+
 # Allow for gitignore files
 !.gitignore
+
+# Allow for Heroku configuration files, only at the top-level
+!/Procfile
+!/requirements.txt
 
 # Allow for the license and README files
 !LICENSE
 !README.md
+
