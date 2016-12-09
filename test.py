@@ -72,10 +72,7 @@ with tf.Session() as sess:
 
     print 'Pxrocessing image %s ...' % filename
 
-    filename_queue = tf.train.string_input_producer(
-        tf.train.match_filenames_once(filename))
-    reader = tf.WholeFileReader()
-    key, contents = reader.read(filename_queue)
+    contents = tf.read_file(filename)
     uint8image = tf.image.decode_jpeg(contents, channels=3)
 
     resized_image = tf.image.resize_images(uint8image, (224, 224))
@@ -93,6 +90,7 @@ with tf.Session() as sess:
     print pred
 
     gray = tf.image.rgb_to_grayscale(resized_image)
+    gray = tf.reshape(gray, [1, 224, 224, 1])
     gray_rgb = tf.image.grayscale_to_rgb(gray)
     gray_yuv = rgb2yuv(gray_rgb)
     gray = tf.concat(3, [gray, gray, gray])
@@ -104,7 +102,7 @@ with tf.Session() as sess:
 
     input_image = sess.run(gray)
 
-    feed_dict = {phase_train : False, uv: 3, grayscale : input_image}
+    feed_dict = {phase_train : False, uv: 3, graph.get_tensor_by_name('concat:0') : input_image}
 
     print 'Running colornet...'
     pred_, pred_rgb_, colorimage_, gray_rgb_ = sess.run(
