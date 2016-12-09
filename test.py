@@ -8,6 +8,7 @@ import skimage.io
 import numpy as np
 
 filename = sys.argv[1]
+color = sys.argv[2]
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 uv = tf.placeholder(tf.uint8, name='uv')
 
@@ -61,21 +62,21 @@ def yuv2rgb(yuv):
 
 
 with tf.Session() as sess:
-    saver = tf.train.import_meta_graph('model_blue.meta')
+    saver = tf.train.import_meta_graph('model_%s.meta' % color)
   
     print 'Restoring session...'
-    saver.restore(sess, tf.train.latest_checkpoint('./'))
+    saver.restore(sess, 'model_%s' % color)
     print 'Session loaded!'
 
     graph = tf.get_default_graph()
     print 'Loaded default graph'
 
-    print 'Pxrocessing image %s ...' % filename
+    print 'Processing image %s ...' % filename
 
     contents = tf.read_file(filename)
     uint8image = tf.image.decode_jpeg(contents, channels=3)
-    img = sess.run(uint8image)
-    resized_image = tf.image.resize_images(uint8image, (224, 224))
+    resized_image = tf.div(tf.image.resize_images(uint8image, (224, 224)), 255)
+    img = sess.run(resized_image)
 
     print'Done processing image!'
 
@@ -102,5 +103,6 @@ with tf.Session() as sess:
         [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
     
     print pred_rgb_[0]
-    image = concat_images(img, pred_rgb_[0])
+    image = concat_images(grayscale_rgb_[0], pred_rgb_[0])
+    image = concat_images(image, img)
     plt.imsave("output.png", image)
