@@ -5,11 +5,11 @@ import sys
 from matplotlib import pyplot as plt
 import skimage
 import skimage.io
+import numpy as np
 
 filename = sys.argv[1]
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 uv = tf.placeholder(tf.uint8, name='uv')
-grayscale = tf.placeholder(tf.float32, [1,224,224,3], name='grayscale')
 
 def concat_images(imga, imgb):
     """
@@ -76,39 +76,31 @@ with tf.Session() as sess:
     uint8image = tf.image.decode_jpeg(contents, channels=3)
 
     resized_image = tf.image.resize_images(uint8image, (224, 224))
-    sess.run(uint8image)
 
     print'Done processing image!'
-
-    init = tf.initialize_all_variables()
-    init_local = tf.initialize_all_variables()
-    sess.run(init)
-    sess.run(init_local)
-    print "variables initialized"
 
     pred = graph.get_tensor_by_name("colornet_1/conv2d_4/Sigmoid:0")
     print pred
 
-    gray = tf.image.rgb_to_grayscale(resized_image)
-    gray = tf.reshape(gray, [1, 224, 224, 1])
-    gray_rgb = tf.image.grayscale_to_rgb(gray)
-    gray_yuv = rgb2yuv(gray_rgb)
-    gray = tf.concat(3, [gray, gray, gray])
+    grayscale = tf.image.rgb_to_grayscale(resized_image)
+    grayscale = tf.reshape(grayscale, [1, 224, 224, 1])
+    grayscale_rgb = tf.image.grayscale_to_rgb(grayscale)
+    grayscale_yuv = rgb2yuv(grayscale_rgb)
+    grayscale = tf.concat(3, [grayscale, grayscale, grayscale])
 
     print 'done transforms'
     
-    pred_yuv = tf.concat(3, [tf.split(3, 3, gray_yuv)[0], pred])
+    pred_yuv = tf.concat(3, [tf.split(3, 3, grayscale_yuv)[0], pred])
     pred_rgb = yuv2rgb(pred_yuv)
 
-    input_image = sess.run(gray)
+    input_image = sess.run(grayscale)
 
     feed_dict = {phase_train : False, uv: 3, graph.get_tensor_by_name('concat:0') : input_image}
 
     print 'Running colornet...'
-    pred_, pred_rgb_, colorimage_, gray_rgb_ = sess.run(
-        [pred, pred_rgb, resized_image, gray_rgb], feed_dict=feed_dict)
-    pred_yuv = tf.concat(3, [tf.split(3, 3, gray_yuv)[0], pred])
-    pred_rgb = yuv2rgb(pred_yuv)
+    pred_, pred_rgb_, colorimage_, grayscale_rgb_ = sess.run(
+        [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
     
-    image = concat_images(resized_image, pred)
-    plt.imsave("output.png", image)
+    print grayscale_rgb_[0]
+    #image = concat_images(input_image, pred_rgb_[0])
+    plt.imsave("output.png", grayscale_rgb_[0])
