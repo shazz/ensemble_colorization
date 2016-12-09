@@ -8,7 +8,6 @@ import skimage.io
 import numpy as np
 
 filename = sys.argv[1]
-color = sys.argv[2]
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 uv = tf.placeholder(tf.uint8, name='uv')
 
@@ -62,47 +61,56 @@ def yuv2rgb(yuv):
 
 
 with tf.Session() as sess:
-    saver = tf.train.import_meta_graph('model_%s.meta' % color)
-  
-    print 'Restoring session...'
-    saver.restore(sess, 'model_%s' % color)
-    print 'Session loaded!'
+    saver = tf.train.import_meta_graph('model_blue.meta')
 
-    graph = tf.get_default_graph()
-    print 'Loaded default graph'
+    predictions = dict()
 
-    print 'Processing image %s ...' % filename
+    for color in ['red', 'green', 'blue']:
+        print 'Restoring session...'
+        saver.restore(sess, 'model_%s' % color)
+        print 'Session loaded!'
 
-    contents = tf.read_file(filename)
-    uint8image = tf.image.decode_jpeg(contents, channels=3)
-    resized_image = tf.div(tf.image.resize_images(uint8image, (224, 224)), 255)
-    img = sess.run(resized_image)
+        graph = tf.get_default_graph()
+        print 'Loaded default graph'
+        
+        print 'Processing image %s ...' % filename
 
-    print'Done processing image!'
+        contents = tf.read_file(filename)
+        uint8image = tf.image.decode_jpeg(contents, channels=3)
+        resized_image = tf.div(tf.image.resize_images(uint8image, (224, 224)), 255)
+        img = sess.run(resized_image)
 
-    pred = graph.get_tensor_by_name("colornet_1/conv2d_4/Sigmoid:0")
-    print pred
+        print'Done processing image!'
 
-    grayscale = tf.image.rgb_to_grayscale(resized_image)
-    grayscale = tf.reshape(grayscale, [1, 224, 224, 1])
-    grayscale_rgb = tf.image.grayscale_to_rgb(grayscale)
-    grayscale_yuv = rgb2yuv(grayscale_rgb)
-    grayscale = tf.concat(3, [grayscale, grayscale, grayscale])
+        pred = graph.get_tensor_by_name("colornet_1/conv2d_4/Sigmoid:0")
 
-    print 'done transforms'
+        grayscale = tf.image.rgb_to_grayscale(resized_image)
+        grayscale = tf.reshape(grayscale, [1, 224, 224, 1])
+        grayscale_rgb = tf.image.grayscale_to_rgb(grayscale)
+        grayscale_yuv = rgb2yuv(grayscale_rgb)
+        grayscale = tf.concat(3, [grayscale, grayscale, grayscale])
+
+        print 'done transforms'
     
-    pred_yuv = tf.concat(3, [tf.split(3, 3, grayscale_yuv)[0], pred])
-    pred_rgb = yuv2rgb(pred_yuv)
+        pred_yuv = tf.concat(3, [tf.split(3, 3, grayscale_yuv)[0], pred])
+        pred_rgb = yuv2rgb(pred_yuv)
 
-    input_image = sess.run(grayscale)
+        input_image = sess.run(grayscale)
 
-    feed_dict = {phase_train : False, uv: 3, graph.get_tensor_by_name('concat:0') : input_image}
+        feed_dict = {phase_train : False, uv: 3, graph.get_tensor_by_name('concat:0') : input_image}
 
-    print 'Running colornet...'
-    pred_, pred_rgb_, colorimage_, grayscale_rgb_ = sess.run(
-        [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
-    
-    print pred_rgb_[0]
-    image = concat_images(grayscale_rgb_[0], pred_rgb_[0])
+        print 'Running colornet...'
+        pred_, pred_rgb_, colorimage_, grayscale_rgb_ = sess.run(
+            [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
+            
+        predictions[color] = pred_rgb_[0]
+
+    # The three arrays:
+    # predictions['red'], predictions['green'], predictions['blue']
+
+    # Call recombine code
+    # output = recombine(predictions)
+
+    image = concat_images(grayscale_rgb_[0], output)
     image = concat_images(image, img)
     plt.imsave("output.png", image)
