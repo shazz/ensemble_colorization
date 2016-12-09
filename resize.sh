@@ -31,5 +31,5 @@ output_dir=$2
 mkdir -p ${output_dir}
 
 # Convert images in parallel, using as many processes as possible
-find ${image_dir} -type f -name '*.jpg' | parallel -j ${NUM_JOBS} --progress \
+find -L ${image_dir} -type f -name '*.jpg' | parallel -j${NUM_JOBS} --progress \
         convert -resize ${IMAGE_SIZE}\! {} ${output_dir}/{/}
