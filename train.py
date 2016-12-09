@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import glob
-import sys
+from os import path, makedirs
 from matplotlib import pyplot as plt
 from batchnorm import ConvolutionalBatchNormalizer
 from argparse import ArgumentParser
@@ -10,11 +10,22 @@ from argparse import ArgumentParser
 NUM_EPOCHS = 1e+9
 IMAGE_SAVE_RATE = 1000
 MODEL_SAVE_RATE = 100000
+FINAL_MODEL_PATH = 'final.tfmodel'
 
 # Command-line arguments
 parser = ArgumentParser(description="Trains a recolorization CNN with the "
         "given parameters under the images in rgb_imgs/. The model is "
         "incrementally saved to model.chkpt.")
+parser.add_argument("image_dir", type=str, help="The directory "
+        "containing the JPEG images to run testing on.")
+parser.add_argument("summary_dir", type=str, help="The output directory to "
+        "place the intermediate results of training into. The results are the "
+        "grayscale, training result, and original images concatenated together "
+        "at the every image_save_rate steps.")
+parser.add_argument("-f", "--final-model", dest='final_model_path',
+        default=FINAL_MODEL_PATH, type=str, help="The path to the file to "
+        "store the final model in after training is completed or stopped. This "
+        "will also save a TensorFlow meta file under <final_model>.meta.")
 parser.add_argument("-e", "--epochs", dest='num_epochs', default=NUM_EPOCHS,
         type=int, help="The number of epochs to run training for. An epoch is "
         "a complete iteration over all the input images.")
@@ -27,7 +38,7 @@ parser.add_argument("-m", "--model-save-rate", dest="model_save_rate", type=int,
         "model will be saved to 'model.chkpt'")
 args = parser.parse_args()
 
-filenames = sorted(glob.glob("rgb_imgs/*.jpg"))
+filenames = sorted(glob.glob(path.join(args.image_dir, "*.jpg")))
 batch_size = 1
 num_epochs = args.num_epochs
 image_save_rate = args.image_save_rate
@@ -36,7 +47,6 @@ model_save_rate = args.model_save_rate
 global_step = tf.Variable(0, name='global_step', trainable=False)
 phase_train = tf.placeholder(tf.bool, name='phase_train')
 uv = tf.placeholder(tf.uint8, name='uv')
-
 
 def read_my_file_format(filename_queue, randomize=False):
     reader = tf.WholeFileReader()
@@ -277,9 +287,14 @@ sess.run(init_op2)
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
+# Create the summary directory if it doesn't exist
+if not path.exists(args.summary_dir):
+    makedirs(args.summary_dir)
+
 num_images = len(filenames)
 print('Beginning training...')
-print("Found {} images under the 'rgbs_imgs' directory".format(num_images))
+print("Found {} images under the '{}' directory".format(num_images,
+        args.image_dir))
 try:
     while not coord.should_stop():
         # Run training steps
@@ -295,22 +310,19 @@ try:
                 "step": step,
                 "cost": np.mean(cost)
             }
-            sys.stdout.flush()
 
         if step % image_save_rate == 0:
             summary_image = concat_images(grayscale_rgb_[0], pred_rgb_[0])
             summary_image = concat_images(summary_image, colorimage_[0])
-            summary_path = "summary/{}_{}".format(step / num_images,
-                    step % num_images)
+            summary_path = path.join(args.summary_dir, "{}_{}".format(
+                    step / num_images, step % num_images))
             plt.imsave(summary_path, summary_image)
             print("Image summary saved to file '{}'".format(summary_path +
                     ".jpg"))
-            sys.stdout.flush()
 
         if (step % model_save_rate == 0) and (step != 0):
             save_path = saver.save(sess, "model.ckpt")
             print("Model saved to file '{}'".format(save_path))
-            sys.stdout.flush()
 
 except tf.errors.OutOfRangeError:
     print('Done training -- epoch limit reached')
@@ -320,7 +332,7 @@ finally:
     # When done, ask the threads to stop.
     coord.request_stop()
     # Save the final model
-    model_path = saver.save(sess, 'final.tfmodel')
+    model_path = saver.save(sess, args.final_model_path)
     print("Saving final model to '{}'".format(model_path))
 
 # Wait for threads to finish.
