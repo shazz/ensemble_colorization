@@ -74,7 +74,7 @@ with tf.Session() as sess:
 
     contents = tf.read_file(filename)
     uint8image = tf.image.decode_jpeg(contents, channels=3)
-
+    img = sess.run(uint8image)
     resized_image = tf.image.resize_images(uint8image, (224, 224))
 
     print'Done processing image!'
@@ -101,6 +101,6 @@ with tf.Session() as sess:
     pred_, pred_rgb_, colorimage_, grayscale_rgb_ = sess.run(
         [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
     
-    print grayscale_rgb_[0]
-    #image = concat_images(input_image, pred_rgb_[0])
-    plt.imsave("output.png", grayscale_rgb_[0])
+    print pred_rgb_[0]
+    image = concat_images(img, pred_rgb_[0])
+    plt.imsave("output.png", image)
