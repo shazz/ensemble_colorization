@@ -74,15 +74,34 @@ def yuv2rgb(yuv):
 def recombine(predictions):
     """
     Combines the output images from the 3 CNN's, where each one is biased to a
-    color channel, into a final output image.
+    color channel, into a final output image. Recombination is done by
+    pixel-wise weighting, where the pixel value for any given CNN's output is
+    weighted as its relative intensity to the other two.
     """
     red_biased = predictions['red']
-    blue_biased = predictions['blue']
     green_biased = predictions['green']
+    blue_biased = predictions['blue']
 
-    # Compute the output image as an average of the three baised ones
-    sum_image = red_biased + blue_biased + green_biased
-    return sum_image / 3.
+    # Compute the pixel-wise intensities (sums) for each biased CNN output image
+    red_intensities = np.sum(red_biased, (2,))
+    green_intensities = np.sum(green_biased, (2,))
+    blue_intensities = np.sum(blue_biased, (2,))
+
+    # Weight each CNN-bias by its relative intensities at each pixel
+    total_intensities = red_intensities + blue_intensities + green_intensities
+    red_weights = red_intensities / total_intensities
+    green_weights = green_intensities / total_intensities
+    blue_weights = blue_intensities / total_intensities
+
+    # Rehsape the per-pixel weights so they can be multiplies with the images
+    new_shape = (red_weights.shape[0], red_weights.shape[1], 1)
+    red_weights = np.reshape(red_weights, new_shape)
+    green_weights = np.reshape(green_weights, new_shape)
+    blue_weights = np.reshape(blue_weights, new_shape)
+
+    # Compute the output image as the pixel-wise weighted sum of the biases
+    return (red_weights * red_biased + green_weights * green_biased +
+            blue_weights * blue_biased)
 
 def run(filename):
     phase_train = tf.placeholder(tf.bool, name='phase_train')
@@ -146,12 +165,12 @@ def run(filename):
             out.append(HTMLObject(path, name))
 
         # Combine the three color-baised images into a final response
-        # output = recombine(predictions)
-        # name = filename.split('/')[-1].split('.')[0] + '_output_combined'
-        # path = 'media/Colorizations/render_' + name + '.png'
-        # plt.imsave(path, output_image)
+        output = recombine(predictions)
+        name = filename.split('/')[-1].split('.')[0] + '_output_combined'
+        path = 'media/Colorizations/render_' + name + '.png'
+        plt.imsave(path, output_image)
 
-        # out.append(HTMLObject(path, name))
+        out.append(HTMLObject(path, name))
 
         return out
 
