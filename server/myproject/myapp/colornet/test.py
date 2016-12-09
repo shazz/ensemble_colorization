@@ -168,6 +168,10 @@ def run(filename):
 
         # Combine the three color-baised images into a final response
         output = recombine(predictions)
+        # Concatenate the grayscale, result, and original images together
+        output_image = concat_images(grayscale_rgb_[0], output)
+        output_image = concat_images(output_image, img)
+
         name = filename.split('/')[-1].split('.')[0] + '_output_combined'
         path = 'media/Colorizations/render_' + name + '.png'
         plt.imsave(path, output_image)
