@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 import tensorflow as tf
-import sys 
+import sys
 from matplotlib import pyplot as plt
 import skimage
 import skimage.io
@@ -59,6 +59,18 @@ def yuv2rgb(yuv):
     temp = tf.div(temp, 255)
     return temp
 
+def recombine(predictions):
+    """
+    Combines the output images from the 3 CNN's, where each one is biased to a
+    color channel, into a final output image.
+    """
+    red_biased = predictions['red']
+    blue_biased = predictions['blue']
+    green_biased = predictions['green']
+
+    # Compute the output image as an average of the three baised ones
+    sum_image = red_biased + blue_biased + green_biased
+    return sum_image / 3.
 
 with tf.Session() as sess:
     saver = tf.train.import_meta_graph('model_blue.meta')
@@ -72,7 +84,7 @@ with tf.Session() as sess:
 
         graph = tf.get_default_graph()
         print 'Loaded default graph'
-        
+
         print 'Processing image %s ...' % filename
 
         contents = tf.read_file(filename)
@@ -91,7 +103,7 @@ with tf.Session() as sess:
         grayscale = tf.concat(3, [grayscale, grayscale, grayscale])
 
         print 'done transforms'
-    
+
         pred_yuv = tf.concat(3, [tf.split(3, 3, grayscale_yuv)[0], pred])
         pred_rgb = yuv2rgb(pred_yuv)
 
@@ -102,14 +114,11 @@ with tf.Session() as sess:
         print 'Running colornet...'
         pred_, pred_rgb_, colorimage_, grayscale_rgb_ = sess.run(
             [pred, pred_rgb, resized_image, grayscale_rgb], feed_dict=feed_dict)
-            
+
         predictions[color] = pred_rgb_[0]
 
-    # The three arrays:
-    # predictions['red'], predictions['green'], predictions['blue']
-
-    # Call recombine code
-    # output = recombine(predictions)
+    # Combine the three color-baised images into a final response
+    output = recombine(predictions)
 
     image = concat_images(grayscale_rgb_[0], output)
     image = concat_images(image, img)
