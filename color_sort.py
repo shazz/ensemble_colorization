@@ -37,20 +37,24 @@ for image_path in args.image_path:
     image = scipy.misc.imread(image_path)
     image_name = os.path.basename(image_path)
 
-    # Sum the image along each color channel, and determine the max sum value
+    # Sum the image along each color channel, skip black and white images
     color_sums = np.sum(image, (0, 1))
-    max_color = np.amax(color_sums)
-    red_max = color_sums[0]
-    green_max = color_sums[1]
-    blue_max = color_sums[2]
+    if color_sums.shape == ():
+        continue
 
-    # Select the output directory to save too based on the max color
-    if red_max == max_color:
-        output_image_dir = os.path.join(args.output_dir, RED_DIR)
-    elif green_max == max_color:
-        output_image_dir = os.path.join(args.output_dir, GREEN_DIR)
-    else:
-        output_image_dir = os.path.join(args.output_dir, BLUE_DIR)
+    # Determine the channel with the max sum value
+    max_color = np.amax(color_sums)
+    red_sum = color_sums[0]
+    green_sum = color_sums[1]
+    blue_sum = color_sums[2]
+
+    # Select the output directory to save to based on the max color. If there
+    # are multiple that match, randomly select one of them
+    color_pairs = [(red_sum, RED_DIR), (blue_sum, BLUE_DIR),
+            (green_sum, GREEN_DIR)]
+    max_colors = [os.path.join(args.output_dir, color)
+            for (color_sum, color) in color_pairs if color_sum == max_color]
+    output_image_dir = np.random.choice(max_colors)
 
     # Create the output directory if needed, and save the output image
     if not os.path.exists(output_image_dir):
