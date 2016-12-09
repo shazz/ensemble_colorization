@@ -84,11 +84,13 @@ def recombine(predictions):
 
     # Compute the pixel-wise intensities (sums) for each biased CNN output image
     red_intensities = np.sum(red_biased, (2,))
+    print red_intensities
     green_intensities = np.sum(green_biased, (2,))
     blue_intensities = np.sum(blue_biased, (2,))
 
     # Weight each CNN-bias by its relative intensities at each pixel
     total_intensities = red_intensities + blue_intensities + green_intensities
+    print total_intensities
     red_weights = red_intensities / total_intensities
     green_weights = green_intensities / total_intensities
     blue_weights = blue_intensities / total_intensities
