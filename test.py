@@ -113,10 +113,10 @@ def main():
 
     # How each biased model's saturations are weighted relative to the others
     sat_weights = {
-        'red': 1 / 3.0,
-        'green': 1 / 6.0,
-        'blue': 1 / 6.0,
-        'blue_green': 1 / 3.0,
+        'red': 1 / 8.0,
+        'green': 7 / 32.0,
+        'blue': 7 / 32.0,
+        'blue_green': 7 / 16.0,
     }
 
     phase_train = tf.placeholder(tf.bool, name='phase_train')
