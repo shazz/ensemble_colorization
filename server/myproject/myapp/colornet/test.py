@@ -72,7 +72,7 @@ def yuv2rgb(yuv):
     temp = tf.div(temp, 255)
     return temp
 
-def recombine(predictions):
+def recombine(predictions, weights):
     """
     Combines the output images from the 3 CNN's, where each one is biased to a
     color channel, into a final output image. Recombination is done by
@@ -82,29 +82,42 @@ def recombine(predictions):
     red_biased = predictions['red']
     green_biased = predictions['green']
     blue_biased = predictions['blue']
+    blue_green_biased = predictions['blue_green']
 
     # Compute the pixel-wise saturation for each biased CNN output image
-    red_saturations = colors.rgb_to_hsv(red_biased)[:,:,1]
-    green_saturations = colors.rgb_to_hsv(green_biased)[:,:,1]
-    blue_saturations = colors.rgb_to_hsv(blue_biased)[:,:,1]
+    red_sats = weights['red'] * colors.rgb_to_hsv(red_biased)[:,:,1]
+    green_sats = weights['green'] * colors.rgb_to_hsv(green_biased)[:,:,1]
+    blue_sats = weights['blue'] * colors.rgb_to_hsv(blue_biased)[:,:,1]
+    blue_green_sats = (weights['blue_green'] *
+            colors.rgb_to_hsv(blue_green_biased)[:,:,1])
 
     # Weight each CNN-bias by its relative saturations at each pixel
-    total_saturations = red_saturations + blue_saturations + green_saturations
-    red_weights = red_saturations / total_saturations
-    green_weights = green_saturations / total_saturations
-    blue_weights = blue_saturations / total_saturations
+    total_sats = red_sats + blue_sats + green_sats + blue_green_sats
+    red_weights = red_sats / total_sats
+    green_weights = green_sats / total_sats
+    blue_weights = blue_sats / total_sats
+    blue_green_weights = blue_green_sats / total_sats
 
-    # Rehsape the per-pixel weights so they can be multiplies with the images
+    # Rehsape the per-pixel weights so they can be multiplied with the image
     new_shape = (red_weights.shape[0], red_weights.shape[1], 1)
     red_weights = np.reshape(red_weights, new_shape)
     green_weights = np.reshape(green_weights, new_shape)
     blue_weights = np.reshape(blue_weights, new_shape)
+    blue_green_weights = np.reshape(blue_green_weights, new_shape)
 
     # Compute the output image as the pixel-wise weighted sum of the biases
     return (red_weights * red_biased + green_weights * green_biased +
-            blue_weights * blue_biased)
+            blue_weights * blue_biased + blue_green_weights * blue_green_biased)
 
 def run(filename):
+    # How each biased model's saturations are weighted relative to the others
+    sat_weights = {
+        'red': 2 / 3.0,
+        'green': 1 / 6.0,
+        'blue': 1 / 6.0,
+        'blue_green': 1 / 3.0,
+    }
+
     phase_train = tf.placeholder(tf.bool, name='phase_train')
     uv = tf.placeholder(tf.uint8, name='uv')
     out = []
@@ -114,7 +127,7 @@ def run(filename):
 
         predictions = dict()
 
-        for color in ['blue', 'red', 'green']:
+        for color in ['blue', 'red', 'green', 'blue_green']:
             print 'Restoring session...'
             saver.restore(sess, 'myproject/myapp/colornet/model_%s' % color)
             print 'Session loaded!'
@@ -166,7 +179,7 @@ def run(filename):
             out.append(HTMLObject(path, name))
 
         # Combine the three color-baised images into a final response
-        output = recombine(predictions)
+        output = recombine(predictions, sat_weights)
         # Concatenate the grayscale, result, and original images together
         output_image = concat_images(grayscale_rgb_[0], output)
         output_image = concat_images(output_image, img)
