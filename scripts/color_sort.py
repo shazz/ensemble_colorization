@@ -16,6 +16,18 @@ RED_DIR = "red"
 BLUE_DIR = "blue"
 GREEN_DIR = "green"
 
+# Function to check if the given pixel is grayscale (all color channels equal)
+def pixel_is_grayscale(pixel):
+    return pixel[0] == pixel[1] and pixel[1] == pixel[2]
+
+# Function to check if an image is grayscale (all color channels are equal)
+def image_is_grayscale(image):
+    for row in image:
+        for pixel in row:
+            if not pixel_is_grayscale(pixel):
+                return False
+    return True
+
 # Parse the command line arguments
 parser = ArgumentParser(description="Sorts the given input image into the "
         "red, green, or blue directory output directory based on its dominant "
@@ -37,9 +49,9 @@ for image_path in args.image_path:
     image = scipy.misc.imread(image_path)
     image_name = os.path.basename(image_path)
 
-    # Sum the image along each color channel, skip black and white images
+    # Sum the image along each color channel, skip grayscale images
     color_sums = np.sum(image, (0, 1))
-    if color_sums.shape == ():
+    if color_sums.shape == () or image_is_grayscale(image):
         continue
 
     # Determine the channel with the max sum value
