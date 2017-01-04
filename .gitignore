@@ -33,6 +33,15 @@
 # Allow for font files
 !*.woff
 
+# Allow for Latex files
+!*.tex
+!*.sty
+!*.bst
+!*.bib
+
+# Allow for images files for used for the reports
+!/paper/images/*.png
+
 # Allow for gitignore files
 !.gitignore
 
