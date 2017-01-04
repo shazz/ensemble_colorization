@@ -39,6 +39,9 @@
 !*.bst
 !*.bib
 
+# Allow for the Word and Power Point files
+!*.docx
+
 # Allow for images files for used for the reports
 !/paper/images/*.png
 !/docs/midprogress/images/*.png

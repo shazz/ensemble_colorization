@@ -16,4 +16,3 @@ clean:
 			paper/paper.pdf reports/midprogress/report.aux \
 			reports/midprogress/report.bbl reports/midprogress/report.blg \
 			reports/midprogress/report.log reports/midprogress/report.pdf
-
