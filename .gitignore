@@ -41,6 +41,7 @@
 
 # Allow for images files for used for the reports
 !/paper/images/*.png
+!/docs/midprogress/images/*.png
 
 # Allow for gitignore files
 !.gitignore
