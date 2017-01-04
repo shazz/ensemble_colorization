@@ -41,6 +41,7 @@
 
 # Allow for the Word and Power Point files
 !*.docx
+!*.pptx
 
 # Allow for images files for used for the reports
 !/paper/images/*.png
