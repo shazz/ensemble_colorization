@@ -2,13 +2,18 @@
 
 all: paper
 
+midprogress: reports/midprogress/report.pdf
+
 paper: paper/paper.pdf
 
-paper/paper.pdf:
-	cd paper && pdflatex paper.tex
-	-cd paper && bibtex paper.aux
-	cd paper && pdflatex paper.tex
+%.pdf:
+	cd $(dir $*) && pdflatex $(notdir $*).tex
+	-cd $(dir $*) && bibtex $(notdir $*).aux
+	cd $(dir $*) && pdflatex $(notdir $*).tex
 
 clean:
 	rm paper/paper.aux paper/paper.bbl paper/paper.blg paper/paper.log \
-			paper/paper.pdf
+			paper/paper.pdf reports/midprogress/report.aux \
+			reports/midprogress/report.bbl reports/midprogress/report.blg \
+			reports/midprogress/report.log reports/midprogress/report.pdf
+
