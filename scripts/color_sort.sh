@@ -33,6 +33,7 @@ output_dir=$2
 mkdir -p ${output_dir}/red
 mkdir -p ${output_dir}/blue
 mkdir -p ${output_dir}/green
+mkdir -p ${output_dir}/blue_green
 
 # Convert the images in parallel, splitting the work among 2*num_cores processes
 num_cores=$(getconf _NPROCESSORS_ONLN)

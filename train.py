@@ -61,6 +61,9 @@ def read_my_file_format(filename_queue, randomize=False):
 
 
 def input_pipeline(filenames, batch_size, num_epochs=None):
+    print("Image dir:", args.image_dir)
+    print("Files:", filenames)
+    print("Epochs:", num_epochs)
     filename_queue = tf.train.string_input_producer(
         filenames, num_epochs=num_epochs, shuffle=False)
     example = read_my_file_format(filename_queue, randomize=False)
@@ -258,23 +261,23 @@ if phase_train is not None:
         loss, global_step=global_step, gate_gradients=optimizer.GATE_NONE)
 
 # Summaries
-tf.histogram_summary("weights1", weights["wc1"])
-tf.histogram_summary("weights2", weights["wc2"])
-tf.histogram_summary("weights3", weights["wc3"])
-tf.histogram_summary("weights4", weights["wc4"])
-tf.histogram_summary("weights5", weights["wc5"])
-tf.histogram_summary("weights6", weights["wc6"])
-tf.histogram_summary("instant_loss", tf.reduce_mean(loss))
-tf.image_summary("colorimage", colorimage, max_images=1)
-tf.image_summary("pred_rgb", pred_rgb, max_images=1)
-tf.image_summary("grayscale", grayscale_rgb, max_images=1)
+tf.summary.histogram("weights1", weights["wc1"])
+tf.summary.histogram("weights2", weights["wc2"])
+tf.summary.histogram("weights3", weights["wc3"])
+tf.summary.histogram("weights4", weights["wc4"])
+tf.summary.histogram("weights5", weights["wc5"])
+tf.summary.histogram("weights6", weights["wc6"])
+tf.summary.histogram("instant_loss", tf.reduce_mean(loss))
+tf.summary.image("colorimage", colorimage, max_outputs=1)
+tf.summary.image("pred_rgb", pred_rgb, max_outputs=1)
+tf.summary.image("grayscale", grayscale_rgb, max_outputs=1)
 
 # Saver.
 saver = tf.train.Saver()
 
 # Create the graph, etc.
-init_op = tf.initialize_all_variables()
-init_op2 = tf.initialize_local_variables()
+init_op = tf.global_variables_initializer() #tf.initialize_all_variables()
+init_op2 = tf.local_variables_initializer() # tf.initialize_local_variables()
 
 # Create a session for running operations in the Graph.
 sess = tf.Session()
@@ -306,17 +309,14 @@ try:
         if step % 1 == 0:
             pred_, pred_rgb_, colorimage_, grayscale_rgb_, cost = sess.run(
                 [pred, pred_rgb, colorimage, grayscale_rgb, loss], feed_dict={phase_train: False, uv: 3})
-            print {
-                "step": step,
-                "cost": np.mean(cost)
-            }
+            print ("step", step, "cost", np.mean(cost))
 
         if step % image_save_rate == 0:
             summary_image = concat_images(grayscale_rgb_[0], pred_rgb_[0])
             summary_image = concat_images(summary_image, colorimage_[0])
             summary_path = path.join(args.summary_dir, "{}_{}".format(
                     step / num_images, step % num_images))
-            plt.imsave(summary_path, summary_image)
+            plt.imsave(summary_path + ".jpg", summary_image)
             print("Image summary saved to file '{}'".format(summary_path +
                     ".jpg"))
 

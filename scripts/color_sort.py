@@ -15,6 +15,7 @@ from argparse import ArgumentParser
 RED_DIR = "red"
 BLUE_DIR = "blue"
 GREEN_DIR = "green"
+BLUE_GREEN_DIR = "blue_green"
 
 # Function to check if the given pixel is grayscale (all color channels equal)
 def pixel_is_grayscale(pixel):
@@ -59,13 +60,16 @@ for image_path in args.image_path:
     red_sum = color_sums[0]
     green_sum = color_sums[1]
     blue_sum = color_sums[2]
+    blue_green_sum = (green_sum + blue_sum)/2
+
+    if blue_sum == green_sum:
+        blue_sum = 0
+        green_sum = 0
 
     # Select the output directory to save to based on the max color. If there
     # are multiple that match, randomly select one of them
-    color_pairs = [(red_sum, RED_DIR), (blue_sum, BLUE_DIR),
-            (green_sum, GREEN_DIR)]
-    max_colors = [os.path.join(args.output_dir, color)
-            for (color_sum, color) in color_pairs if color_sum == max_color]
+    color_pairs = [(red_sum, RED_DIR), (blue_sum, BLUE_DIR), (green_sum, GREEN_DIR), (blue_green_sum, BLUE_GREEN_DIR)]
+    max_colors = [os.path.join(args.output_dir, color) for (color_sum, color) in color_pairs if color_sum == max_color]
     output_image_dir = np.random.choice(max_colors)
 
     # Create the output directory if needed, and save the output image

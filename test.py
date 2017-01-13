@@ -122,24 +122,35 @@ def main():
     phase_train = tf.placeholder(tf.bool, name='phase_train')
     uv = tf.placeholder(tf.uint8, name='uv')
 
+    print("Starting TF session")
+
     with tf.Session() as sess:
-        saver = tf.train.import_meta_graph('model_blue.meta')
+        saver = tf.train.import_meta_graph('model/model_blue.meta')
 
         image_paths = glob.glob(os.path.join(args.image_dir, "*.jpg"))
+        print(image_paths)
         for image_path in sorted(image_paths):
             predictions = dict()
-            print "\nEvaluating image '{}':".format(image_path)
+            print("\nEvaluating image '{}':".format(image_path))
 
             for color in ['red', 'green', 'blue', 'blue_green']:
-                print "\tRunning {}-biased colornet CNN model...".format(color)
-                saver.restore(sess, 'model_%s' % color)
+                print("\tRunning {}-biased colornet CNN model...".format(color))
+                
+                print("restore color model", color)
+                saver.restore(sess, 'model/model_%s' % color)
+
+                print("get graph")
                 graph = tf.get_default_graph()
 
+                print("read file", image_path)
                 contents = tf.read_file(image_path)
                 uint8image = tf.image.decode_jpeg(contents, channels=3)
                 resized_image = tf.div(tf.image.resize_images(uint8image, (224, 224)), 255)
+                
+                print("get resized image")
                 img = sess.run(resized_image)
 
+                print("get soigmoid tensor")
                 pred = graph.get_tensor_by_name("colornet_1/conv2d_4/Sigmoid:0")
 
                 grayscale = tf.image.rgb_to_grayscale(resized_image)
@@ -151,6 +162,7 @@ def main():
                 pred_yuv = tf.concat(3, [tf.split(3, 3, grayscale_yuv)[0], pred])
                 pred_rgb = yuv2rgb(pred_yuv)
 
+                print("get grayscaled image")
                 input_image = sess.run(grayscale)
 
                 feed_dict = {phase_train : False, uv: 3, graph.get_tensor_by_name('concat:0') : input_image}
@@ -161,7 +173,7 @@ def main():
                 predictions[color] = pred_rgb_[0]
 
             # Combine the three color-baised images into a final response
-            print "\tCombining the biased CNN outputs into a final image..."
+            print("\tCombining the biased CNN outputs into a final image...")
             output = recombine(predictions, sat_weights)
 
             # Concatenate the grayscale, result, and original images together
@@ -171,7 +183,7 @@ def main():
             # Save the output image to the directory with the same name
             image_name = os.path.basename(image_path)
             output_image_path = os.path.join(args.output_dir, image_name)
-            print "\tSaving the evaluation to '{}'...".format(output_image_path)
+            print("\tSaving the evaluation to '{}'...".format(output_image_path))
             plt.imsave(output_image_path, output_image)
 
 if __name__ == '__main__':
