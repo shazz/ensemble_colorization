@@ -1,4 +1,4 @@
-# Colornet / ensemble Ccolorization
+# Colornet / Image Colorization via Ensemble of CNNs
 
 ## Sources
 - Fork from Image Colorization via Ensemble of CNNs (https://github.com/bperez77/ensemble_colorization)
@@ -42,3 +42,7 @@
 
   * Call `./test.sh`
 
+## Authors
+
+ * Pavel Gonchar for Colornet
+ * Brandon Perez, Sohil Shah and Rohit Banerjee for Image Colorization via Ensemble of CNNs
