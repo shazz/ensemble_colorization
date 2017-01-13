@@ -1,8 +1,8 @@
-# Colornet / ensemble_colorization
+# Colornet / ensemble Ccolorization
 
 ## Sources
-- Fork from https://github.com/shazz/ensemble_colorization
-- Fork from https://github.com/pavelgonchar/colornet
+- Fork from Image Colorization via Ensemble of CNNs (https://github.com/bperez77/ensemble_colorization)
+- Fork from Colornet (https://github.com/pavelgonchar/colornet)
 
 ## Usage
 
