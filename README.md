@@ -1,8 +1,8 @@
-# ensemble_colorization
+# Colornet / ensemble_colorization
 
 ## Sources
 - Fork from https://github.com/shazz/ensemble_colorization
-- Fork form https://github.com/pavelgonchar/colornet
+- Fork from https://github.com/pavelgonchar/colornet
 
 ## Usage
 
@@ -20,16 +20,18 @@
 
 2. Setup the dataset structure
 
-  * Call `./setup.sh`
+  * Call `./setup.sh` to create the directories
 
-3. Download and processan image data set 
+3. Download, extract and process an image data set 
 
-  * Copy the JPG image in `dataset/original`
+  * Copy the JPG images in `dataset/original`
 
   * Process the images, call `./process_dataset.sh`
 
 4. Train the 4 CNN Models
 
+  * Modify `train.sh` to configure EPOCH, SUMMARY exports and MODEL checkpoint 
+  
   * Call `./train.sh`
 
   * Check the results in `dataset/summary`
