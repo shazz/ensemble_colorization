@@ -60,16 +60,18 @@ for image_path in args.image_path:
     red_sum = color_sums[0]
     green_sum = color_sums[1]
     blue_sum = color_sums[2]
-    blue_green_sum = (green_sum + blue_sum)/2
+    blue_green_sum = 0
 
-    if blue_sum == green_sum:
-        blue_sum = 0
-        green_sum = 0
+    # if green and blue are both dominant over red, that's a blue green dominance
+    if blue_sum > red_sum and green_sum > red_sum:
+        print(image_name, " has more blue and green then red", blue_sum, green_sum, red_sum)
+        blue_green_sum = blue_sum + green_sum
 
     # Select the output directory to save to based on the max color. If there
     # are multiple that match, randomly select one of them
+    max_of_sums = max([red_sum, green_sum, blue_sum, blue_green_sum])
     color_pairs = [(red_sum, RED_DIR), (blue_sum, BLUE_DIR), (green_sum, GREEN_DIR), (blue_green_sum, BLUE_GREEN_DIR)]
-    max_colors = [os.path.join(args.output_dir, color) for (color_sum, color) in color_pairs if color_sum == max_color]
+    max_colors = [os.path.join(args.output_dir, color) for (color_sum, color) in color_pairs if color_sum == max_of_sums]
     output_image_dir = np.random.choice(max_colors)
 
     # Create the output directory if needed, and save the output image
